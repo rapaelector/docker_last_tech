@@ -1,0 +1,54 @@
+version: '3'
+services:
+    worker:
+        build: 
+            context: ./DockerFiles
+        ports:
+            - ${SERVER_PORT}:80
+        volumes:
+            - .:/var/www:cached
+        networks:
+            - app-tier
+        depends_on: 
+            - mongo
+        links:
+            - mongo
+        tty: true
+    mongo:
+        container_name: mongo
+        image: mongo
+        restart: unless-stopped
+        volumes:
+            - mongodb:/data/db
+        ports:
+            - ${MONGO_PORT}:27017
+        networks:
+            - app-tier    
+    mongo-express:
+        image: mongo-express
+        links:
+            - mongo
+        depends_on: 
+            - mongo
+        environment:
+            ME_CONFIG_MONGODB_SERVER: "mongo"
+        ports:
+            - '8081:8081'
+        networks:
+            - app-tier
+        
+    mongoclient:
+        image: mongoclient/mongoclient:4.0.0
+        restart: unless-stopped
+        depends_on: 
+            - mongo
+        environment: 
+            MONGODB_SERVER: "mongo"
+        ports:
+            - 3344:3000 
+
+volumes:
+    mongodb:
+networks:
+    app-tier:
+        driver: bridge
